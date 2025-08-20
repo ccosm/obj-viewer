@@ -42,6 +42,7 @@ class MeshRenderer:
                 "depth_test_enable": True,
                 "depth_write_enable": True,
                 "depth_func": spy.ComparisonFunc.less,
+                "format": spy.Format.d32_float
             },
         )
 
