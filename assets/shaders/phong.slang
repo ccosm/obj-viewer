@@ -15,6 +15,7 @@ struct VertexOutput {
     float4 pos : SV_Position;
     float3 worldPos : TEXCOORD1;
     float3 normal : TEXCOORD2;
+    float3 flatNormal : TEXCOORD3;
     float2 uv : TEXCOORD0;
 };
 
@@ -22,7 +23,7 @@ struct VertexOutput {
 VertexOutput vertex_main(VertexInput in) {
     float4x4 mv = mul(view, model);
 
-    VertexOutput out;
+    VertexOutput out = (VertexOutput)0;
     float4 worldPosition = mul(model, float4(in.pos, 1.0));
     out.pos = mul(proj, mul(view, worldPosition));
     out.worldPos = worldPosition.xyz;
@@ -34,11 +35,41 @@ VertexOutput vertex_main(VertexInput in) {
     return out;
 }
 
+float3 ComputeFlatNormal(float3 pos0, float3 pos1, float3 pos2, bool isOddNegative)
+{
+    float3 flatNormal = normalize(cross(pos1 - pos0, pos2 - pos0));
+
+    if (isOddNegative)
+    {
+        flatNormal = -flatNormal;
+    }
+
+    return flatNormal;
+}
+
+[shader("geometry")]
+[maxvertexcount(3)]
+void geometry_main(triangle VertexOutput Input[3], inout TriangleStream<VertexOutput> Output)
+{
+    float3 flatNormal = ComputeFlatNormal(Input[0].worldPos, Input[1].worldPos, Input[2].worldPos, false);
+
+    VertexOutput outputVertexA = Input[0];
+    outputVertexA.flatNormal = flatNormal;
+    VertexOutput outputVertexB = Input[1];
+    outputVertexB.flatNormal = flatNormal;
+    VertexOutput outputVertexC = Input[2];
+    outputVertexC.flatNormal = flatNormal;
+
+    Output.Append(outputVertexA);
+    Output.Append(outputVertexB);
+    Output.Append(outputVertexC);
+}
+
 [shader("fragment")]
 float4 fragment_main(VertexOutput in) : SV_Target {
     float3 lightPos = { -2, 5, 5 };
 
-    float3 N = normalize(in.normal);
+    float3 N = normalize(in.flatNormal);
     float3 L = normalize(lightPos - in.worldPos);
     float3 V = normalize(cameraPos - in.worldPos);
     float3 R = reflect(-L, N);

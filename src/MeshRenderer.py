@@ -8,7 +8,7 @@ class MeshRenderer:
     def __init__(self, device: spy.Device, output_format: spy.Format):
         self.program = device.load_program(
             "phong.slang",
-            ["vertex_main", "fragment_main"],
+            ["vertex_main", "geometry_main", "fragment_main"],
             link_options={"debug_info": spy.SlangDebugInfoLevel.maximal},
         )
 
@@ -42,6 +42,7 @@ class MeshRenderer:
                 "depth_test_enable": True,
                 "depth_write_enable": True,
                 "depth_func": spy.ComparisonFunc.less,
+                "format": spy.Format.d32_float
             },
         )
 
